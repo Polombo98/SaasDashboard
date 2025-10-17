@@ -13,4 +13,39 @@ model User {
   password  String
   name      String?
   createdAt DateTime @default(now())
+  Member    Member[]
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Team {
+  id        String    @id @default(cuid())
+  name      String
+  members   Member[]
+  projects  Project[]
+  createdAt DateTime  @default(now())
+}
+
+model Member {
+  id     String @id @default(cuid())
+  role   Role
+  userId String
+  teamId String
+  user   User   @relation(fields: [userId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, teamId])
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+  apiKey    String   @unique
+  createdAt DateTime @default(now())
 }
