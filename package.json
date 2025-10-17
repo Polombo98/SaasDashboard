@@ -1,0 +1,15 @@
+{
+  "name": "saas-dashboard",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n WEB,API -c auto,auto \"npm:dev --workspace=apps/web\" \"npm:dev --workspace=apps/api\"",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "devDependencies": { "concurrently": "^9.0.0" }
+}
