@@ -2,6 +2,25 @@
 
 A robust NestJS-based REST API for a multi-tenant SaaS platform with team management, project organization, and role-based access control (RBAC).
 
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+- [API Documentation](#api-documentation)
+- [Authentication](#authentication)
+- [API Endpoints](#api-endpoints)
+- [Metric Event Ingestion](#metric-event-ingestion)
+- [Analytics & Reporting](#analytics--reporting)
+- [Role-Based Access Control](#role-based-access-control)
+- [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
+- [Development](#development)
+- [Security Considerations](#security-considerations)
+- [Rate Limiting](#rate-limiting)
+- [Common Issues](#common-issues)
+
 ## Features
 
 - **Authentication & Authorization**
@@ -27,7 +46,11 @@ A robust NestJS-based REST API for a multi-tenant SaaS platform with team manage
 
 - **API Documentation**
   - Auto-generated Swagger/OpenAPI documentation
-  - Interactive API explorer
+  - Interactive API explorer at `/docs`
+
+- **Rate Limiting & Throttling**
+  - Global request throttling (600 req/min)
+  - IP-based rate limiting
 
 ## Tech Stack
 
@@ -35,9 +58,11 @@ A robust NestJS-based REST API for a multi-tenant SaaS platform with team manage
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: JWT (jsonwebtoken, passport-jwt)
-- **Validation**: Zod
-- **Documentation**: Swagger/OpenAPI
+- **Validation**: Zod schemas
+- **Documentation**: Swagger/OpenAPI (@nestjs/swagger)
 - **Password Hashing**: bcrypt
+- **Rate Limiting**: @nestjs/throttler
+- **Testing**: Jest with ts-jest
 
 ## Prerequisites
 
@@ -160,6 +185,18 @@ The refresh token is automatically sent from the HttpOnly cookie. Returns a new 
 
 ## API Endpoints
 
+### Health Check
+- `GET /v1/health` - Check API status and availability
+
+**Response:**
+```json
+{
+  "ok": true,
+  "service": "api",
+  "time": "2025-10-18T12:30:00.000Z"
+}
+```
+
 ### Authentication
 - `POST /v1/auth/register` - Register new user
 - `POST /v1/auth/login` - Login user
@@ -257,9 +294,15 @@ Content-Type: application/json
 
 ### Authentication
 
-The ingest endpoint uses **API key authentication** (not JWT). Include the project API key in the `x-api-key` header. You can get the API key from:
-1. Creating a new project (returns API key)
+The ingest endpoint uses **API key authentication** (not JWT). Include the project API key in the `x-api-key` header.
+
+**API Key Format**: `proj_<32-character-hex-string>`
+
+You can get the API key from:
+1. Creating a new project (returns API key in response)
 2. Rotating the API key via `/v1/teams/:teamId/projects/:projectId/rotate-key`
+
+**Security Note**: Keep your API keys secure. They provide direct access to ingest data into your project. Rotate keys immediately if compromised.
 
 ## Analytics & Reporting
 
@@ -426,14 +469,17 @@ prisma/
 ### Running Tests
 
 ```bash
-# Unit tests
+# Run all unit tests
 npm run test
 
-# E2E tests
-npm run test:e2e
+# Watch mode (re-run tests on file changes)
+npm run test:watch
 
-# Test coverage
+# Generate coverage report
 npm run test:cov
+
+# Debug tests
+npm run test:debug
 ```
 
 ### Database Management
@@ -453,20 +499,40 @@ npx prisma studio
 
 ```bash
 # Lint code
-npm run lint
+npx eslint "src/**/*.ts"
 
-# Format code
-npm run format
+# Lint with auto-fix
+npx eslint "src/**/*.ts" --fix
+
+# Type checking
+npx tsc --noEmit
+```
+
+### NestJS CLI (Code Generation)
+
+```bash
+# Generate a new module
+nest generate module feature-name
+
+# Generate a controller
+nest generate controller feature-name
+
+# Generate a service
+nest generate service feature-name
+
+# Generate a complete resource (module, controller, service, DTOs)
+nest generate resource feature-name
 ```
 
 ## Security Considerations
 
 - **Access tokens** are short-lived (15 minutes by default)
 - **Refresh tokens** are stored in HttpOnly cookies (cannot be accessed via JavaScript)
-- **Passwords** are hashed using bcrypt
-- **CORS** is configured for trusted origins only
-- **Input validation** using Zod schemas
-- **SQL injection protection** via Prisma ORM
+- **Passwords** are hashed using bcrypt with salt rounds
+- **Rate limiting** - Global throttling at 600 requests per 60 seconds (10 req/s per IP)
+- **CORS** - Configured for trusted origins (defaults to `http://localhost:3000` for local development)
+- **Input validation** using Zod schemas with strict type checking
+- **SQL injection protection** via Prisma ORM parameterized queries
 
 ## Environment Variables Reference
 
@@ -479,7 +545,38 @@ npm run format
 | `JWT_ACCESS_EXPIRES` | Access token lifetime (seconds) | `900` (15 min) |
 | `JWT_REFRESH_EXPIRES` | Refresh token lifetime (seconds) | `604800` (7 days) |
 
+## Rate Limiting
+
+The API uses global rate limiting to prevent abuse and ensure fair usage:
+
+- **Limit**: 600 requests per 60 seconds (10 requests per second)
+- **Scope**: Per IP address
+- **Response**: Returns HTTP 429 (Too Many Requests) when limit is exceeded
+
+### Rate Limit Headers
+
+All responses include rate limit information:
+- `X-RateLimit-Limit` - Maximum requests allowed
+- `X-RateLimit-Remaining` - Remaining requests in current window
+- `X-RateLimit-Reset` - Time when the rate limit resets
+
+### Customizing Rate Limits
+
+To modify rate limits, update `src/app.module.ts`:
+
+```typescript
+ThrottlerModule.forRoot([{
+  ttl: 60,    // Time window in seconds
+  limit: 600  // Max requests per window
+}])
+```
+
 ## Common Issues
+
+### Rate Limit Exceeded
+- Wait for the rate limit window to reset (check `X-RateLimit-Reset` header)
+- Implement exponential backoff in your client
+- Consider caching responses to reduce API calls
 
 ### Database Connection Error
 - Ensure PostgreSQL is running
@@ -492,8 +589,17 @@ npm run format
 - Ensure token is sent in `Authorization: Bearer <token>` format
 
 ### CORS Errors
-- Update allowed origins in `src/main.ts`
-- Ensure credentials are included in requests
+- **Issue**: Browser blocks requests from your frontend
+- **Solution**: Update allowed origins in `src/main.ts`
+- **Default config**: `origin: ['http://localhost:3000']` (local development only)
+- **Production config**: Add your production domain(s):
+  ```typescript
+  app.enableCors({
+    origin: ['https://yourdomain.com', 'https://app.yourdomain.com'],
+    credentials: true
+  });
+  ```
+- Ensure `credentials: true` is set for cookie-based authentication
 
 ## License
 
