@@ -1,6 +1,6 @@
 'use client';
 import { useSelector } from 'react-redux';
-import type { RootState } from '../state/store';
+import type { RootState } from '../../state/store';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 

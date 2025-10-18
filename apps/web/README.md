@@ -5,7 +5,12 @@ A modern Next.js 15 dashboard application for visualizing SaaS metrics and analy
 ## Features
 
 - **Authentication**: Secure JWT-based authentication with automatic token refresh
-- **Dashboard**: Real-time analytics visualization (MRR, Active Users, Churn Rate)
+- **Dashboard**: Interactive analytics dashboard with real-time visualization
+  - Revenue (MRR), Active Users, and Churn Rate metrics
+  - Project and team selection
+  - Date range filtering with presets (7, 30, 90 days)
+  - Interval selection (day, week, month)
+  - Interactive Recharts line charts
 - **State Management**: Redux Toolkit with RTK Query for efficient data fetching
 - **UI Components**: Material-UI (MUI) with responsive design
 - **Type Safety**: Full TypeScript support throughout the application
@@ -16,7 +21,7 @@ A modern Next.js 15 dashboard application for visualizing SaaS metrics and analy
 - **Language**: TypeScript
 - **State Management**: Redux Toolkit + RTK Query
 - **UI Library**: Material-UI (MUI) v7
-- **Charts**: Recharts (ready to integrate)
+- **Charts**: Recharts - Interactive data visualization
 - **Validation**: Zod
 - **Build Tool**: Turbopack (Next.js default)
 
@@ -75,13 +80,21 @@ src/
 │   ├── providers.tsx             # Redux Provider + MUI Theme
 │   └── _bootstrap.tsx            # Authentication bootstrapper
 │
+├── components/                   # Reusable components
+│   ├── ProjectSwitcher.tsx       # Team and project selector
+│   ├── DateFilters.tsx           # Date range and interval filters
+│   └── ChartCard.tsx             # Chart visualization component
+│
+├── lib/                          # Utility functions
+│   └── date.ts                   # Date formatting and helpers
+│
 ├── login/                        # Login page
 │   └── page.tsx                  # Login form with error handling
 │
 ├── (protected)/                  # Protected routes (require auth)
 │   ├── layout.tsx                # Auth guard
 │   └── dashboard/
-│       └── page.tsx              # Main dashboard with analytics
+│       └── page.tsx              # Interactive analytics dashboard
 │
 └── state/                        # Redux state management
     ├── store.ts                  # Redux store configuration
@@ -90,6 +103,7 @@ src/
     └── services/                 # RTK Query API services
         ├── api.ts                # Base API configuration
         ├── auth.ts               # Auth endpoints
+        ├── projects.ts           # Teams and projects endpoints
         └── analytics.ts          # Analytics endpoints
 ```
 
@@ -221,23 +235,32 @@ const { data } = useChurnQuery({
 
 ### Dashboard Page (`(protected)/dashboard/page.tsx`)
 
-- Displays key metrics in cards (MRR, Active Users, Churn)
-- Loading skeletons while fetching data
-- Error states with user-friendly messages
-- Responsive grid layout
-- Personalized greeting with user name
+An interactive analytics dashboard with full control over data visualization.
 
-**Metric Cards:**
-- 💰 Monthly Recurring Revenue (green)
-- 👥 Active Users (blue)
-- ⚠️ Churn Rate (red)
+**Features:**
+- ✅ **Project Switcher**: Select team and project from dropdown menus
+- ✅ **Date Range Filters**: Custom date selection with quick presets
+  - Last 7, 30, or 90 days presets
+  - Custom from/to date pickers
+  - Interval selection (day, week, month)
+- ✅ **Interactive Charts**: Recharts line charts for all metrics
+  - Revenue (MRR) over time
+  - Active Users trends
+  - Churn Rate percentage
+- ✅ **Responsive Layout**: Works on desktop, tablet, and mobile
+- ✅ **Real-time Updates**: Data refetches when filters change
+
+**Components Used:**
+- `ProjectSwitcher` - Team and project selection
+- `DateFilters` - Date range and interval controls
+- `ChartCard` - Reusable chart visualization
 
 **Future Enhancements:**
-- [ ] Interactive charts with Recharts
-- [ ] Date range picker
-- [ ] Project selector
-- [ ] Export data functionality
-- [ ] Real-time updates
+- [ ] Export data to CSV/JSON
+- [ ] Print/PDF reports
+- [ ] Comparison mode (compare periods)
+- [ ] Custom metric formulas
+- [ ] Real-time WebSocket updates
 
 ## Styling with Material-UI
 

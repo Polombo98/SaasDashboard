@@ -7,22 +7,43 @@ import type { RootState } from '../state/store';
 
 export default function Bootstrapper() {
   const dispatch = useDispatch();
-  const token = useSelector((s: RootState) => s.auth.accessToken);
+  const { accessToken, user } = useSelector((s: RootState) => s.auth);
   const [refresh] = useRefreshMutation();
-  const { refetch } = useMeQuery(undefined, { skip: !token });
 
+  // Fetch user data when we have a token but no user data
+  const { data: meData } = useMeQuery(undefined, {
+    skip: !accessToken || !!user
+  });
+
+  // Bootstrap: Try to refresh token on initial load
   useEffect(() => {
     (async () => {
-      if (!token) {
-        const r = await refresh().unwrap().catch(() => null);
-        if (r?.accessToken) {
-          dispatch(setCredentials({ accessToken: r.accessToken, user: null }));
-          await refetch();
+      if (!accessToken) {
+        try {
+          const refreshResult = await refresh().unwrap();
+          if (refreshResult?.accessToken) {
+            dispatch(setCredentials({
+              accessToken: refreshResult.accessToken,
+              user: null
+            }));
+          }
+        } catch {
+          // Refresh failed, user needs to login
         }
       }
       dispatch(setBootstrapped());
     })();
   }, []); // eslint-disable-line
+
+  // Update user data when fetched
+  useEffect(() => {
+    if (meData && accessToken) {
+      dispatch(setCredentials({
+        accessToken,
+        user: meData
+      }));
+    }
+  }, [meData, accessToken, dispatch]);
 
   return null;
 }

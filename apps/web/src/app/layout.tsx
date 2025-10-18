@@ -6,12 +6,12 @@ export const metadata = { title: 'SaaS Dashboard', description: 'Subscription an
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-  <Providers>
-    <Bootstrapper />
-    {children}
-  </Providers>
-</body>
-      </html>
+      <body suppressHydrationWarning>
+        <Providers>
+          <Bootstrapper />
+          {children}
+        </Providers>
+      </body>
+    </html>
   );
 }

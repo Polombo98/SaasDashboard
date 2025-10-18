@@ -7,6 +7,7 @@ export interface TimeSeriesData {
 
 export interface AnalyticsQueryParams {
   projectId: string;
+  qs?: string; // Query string like "?from=2025-01-01&to=2025-10-18&interval=day"
   from?: string;
   to?: string;
   interval?: 'day' | 'week' | 'month';
@@ -15,33 +16,45 @@ export interface AnalyticsQueryParams {
 export const analyticsApi = api.injectEndpoints({
   endpoints: (build) => ({
     mrr: build.query<TimeSeriesData, AnalyticsQueryParams>({
-      query: ({ projectId, from, to, interval }) => {
+      query: ({ projectId, qs, from, to, interval }) => {
+        // Support both query string and individual params
+        if (qs) {
+          return `/v1/analytics/${projectId}/mrr${qs}`;
+        }
         const params = new URLSearchParams();
         if (from) params.append('from', from);
         if (to) params.append('to', to);
         if (interval) params.append('interval', interval);
-        const qs = params.toString();
-        return `/v1/analytics/${projectId}/mrr${qs ? `?${qs}` : ''}`;
+        const queryString = params.toString();
+        return `/v1/analytics/${projectId}/mrr${queryString ? `?${queryString}` : ''}`;
       },
     }),
     activeUsers: build.query<TimeSeriesData, AnalyticsQueryParams>({
-      query: ({ projectId, from, to, interval }) => {
+      query: ({ projectId, qs, from, to, interval }) => {
+        // Support both query string and individual params
+        if (qs) {
+          return `/v1/analytics/${projectId}/active-users${qs}`;
+        }
         const params = new URLSearchParams();
         if (from) params.append('from', from);
         if (to) params.append('to', to);
         if (interval) params.append('interval', interval);
-        const qs = params.toString();
-        return `/v1/analytics/${projectId}/active-users${qs ? `?${qs}` : ''}`;
+        const queryString = params.toString();
+        return `/v1/analytics/${projectId}/active-users${queryString ? `?${queryString}` : ''}`;
       },
     }),
     churn: build.query<TimeSeriesData, AnalyticsQueryParams>({
-      query: ({ projectId, from, to, interval }) => {
+      query: ({ projectId, qs, from, to, interval }) => {
+        // Support both query string and individual params
+        if (qs) {
+          return `/v1/analytics/${projectId}/churn${qs}`;
+        }
         const params = new URLSearchParams();
         if (from) params.append('from', from);
         if (to) params.append('to', to);
         if (interval) params.append('interval', interval);
-        const qs = params.toString();
-        return `/v1/analytics/${projectId}/churn${qs ? `?${qs}` : ''}`;
+        const queryString = params.toString();
+        return `/v1/analytics/${projectId}/churn${queryString ? `?${queryString}` : ''}`;
       },
     }),
   }),
