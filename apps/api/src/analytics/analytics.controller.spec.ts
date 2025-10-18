@@ -1,12 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AnalyticsController } from './analytics.controller';
+import { AnalyticsService } from './analytics.service';
 
 describe('AnalyticsController', () => {
   let controller: AnalyticsController;
 
+  const mockAnalyticsService = {
+    mrr: jest.fn(),
+    activeUsers: jest.fn(),
+    churn: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AnalyticsController],
+      providers: [
+        { provide: AnalyticsService, useValue: mockAnalyticsService },
+      ],
     }).compile();
 
     controller = module.get<AnalyticsController>(AnalyticsController);
