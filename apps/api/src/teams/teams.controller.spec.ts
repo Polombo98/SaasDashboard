@@ -14,9 +14,7 @@ describe('TeamsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TeamsController],
-      providers: [
-        { provide: TeamsService, useValue: mockTeamsService },
-      ],
+      providers: [{ provide: TeamsService, useValue: mockTeamsService }],
     }).compile();
 
     controller = module.get<TeamsController>(TeamsController);

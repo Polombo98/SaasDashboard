@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { IngestService } from './ingest.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -36,12 +38,22 @@ describe('IngestService', () => {
     it('should ingest events with valid API key', async () => {
       const apiKey = 'proj_validkey';
       const events = [
-        { type: 'REVENUE' as const, value: 99.99, occurredAt: new Date(), userId: 'user1', eventId: '123' },
+        {
+          type: 'REVENUE' as const,
+          value: 99.99,
+          occurredAt: new Date(),
+          userId: 'user1',
+          eventId: '123',
+        },
         { type: 'ACTIVE' as const, occurredAt: new Date(), userId: 'user2' },
       ];
 
       mockPrismaService.project.findUnique.mockResolvedValue({
-        id: 'proj1', teamId: 'team1', name: 'Project', apiKey, createdAt: new Date()
+        id: 'proj1',
+        teamId: 'team1',
+        name: 'Project',
+        apiKey,
+        createdAt: new Date(),
       });
       mockPrismaService.metricEvent.createMany.mockResolvedValue({ count: 2 });
 
@@ -64,22 +76,25 @@ describe('IngestService', () => {
     it('should throw UnauthorizedException for invalid API key', async () => {
       mockPrismaService.project.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.ingestBatch('invalid_key', [])
-      ).rejects.toThrow(UnauthorizedException);
-      await expect(
-        service.ingestBatch('invalid_key', [])
-      ).rejects.toThrow('Invalid API key');
+      await expect(service.ingestBatch('invalid_key', [])).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.ingestBatch('invalid_key', [])).rejects.toThrow(
+        'Invalid API key',
+      );
     });
 
     it('should handle events without optional fields', async () => {
       mockPrismaService.project.findUnique.mockResolvedValue({ id: 'proj1' });
       mockPrismaService.metricEvent.createMany.mockResolvedValue({ count: 1 });
 
-      const events = [{ type: 'SIGNUP' as const, occurredAt: new Date(), userId: 'user1' }];
+      const events = [
+        { type: 'SIGNUP' as const, occurredAt: new Date(), userId: 'user1' },
+      ];
       await service.ingestBatch('key', events);
 
-      const createCall = mockPrismaService.metricEvent.createMany.mock.calls[0][0];
+      const createCall =
+        mockPrismaService.metricEvent.createMany.mock.calls[0][0];
       expect(createCall.data[0]).toMatchObject({
         projectId: 'proj1',
         type: 'SIGNUP',
@@ -94,8 +109,18 @@ describe('IngestService', () => {
       mockPrismaService.metricEvent.createMany.mockResolvedValue({ count: 1 });
 
       const events = [
-        { type: 'REVENUE' as const, value: 50, occurredAt: new Date(), eventId: 'evt1' },
-        { type: 'REVENUE' as const, value: 50, occurredAt: new Date(), eventId: 'evt1' },
+        {
+          type: 'REVENUE' as const,
+          value: 50,
+          occurredAt: new Date(),
+          eventId: 'evt1',
+        },
+        {
+          type: 'REVENUE' as const,
+          value: 50,
+          occurredAt: new Date(),
+          eventId: 'evt1',
+        },
       ];
 
       const result = await service.ingestBatch('key', events);

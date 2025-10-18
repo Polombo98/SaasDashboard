@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Test, TestingModule } from '@nestjs/testing';
 import { TeamsService } from './teams.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -5,7 +7,6 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 describe('TeamsService', () => {
   let service: TeamsService;
-  let prisma: PrismaService;
 
   const mockPrismaService = {
     $transaction: jest.fn(),
@@ -34,7 +35,6 @@ describe('TeamsService', () => {
     }).compile();
 
     service = module.get<TeamsService>(TeamsService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -51,7 +51,7 @@ describe('TeamsService', () => {
         createdAt: new Date(),
       };
 
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+      mockPrismaService.$transaction.mockImplementation((callback) => {
         return callback({
           team: {
             create: jest.fn().mockResolvedValue(mockTeam),
@@ -100,7 +100,10 @@ describe('TeamsService', () => {
         where: { userId },
         include: { team: true },
       });
-      expect(result).toEqual([mockMemberships[0].team, mockMemberships[1].team]);
+      expect(result).toEqual([
+        mockMemberships[0].team,
+        mockMemberships[1].team,
+      ]);
     });
 
     it('should return empty array if user has no teams', async () => {
@@ -138,7 +141,12 @@ describe('TeamsService', () => {
         role: 'ADMIN',
       });
 
-      const result = await service.addMember(ownerId, teamId, targetUserId, 'ADMIN');
+      const result = await service.addMember(
+        ownerId,
+        teamId,
+        targetUserId,
+        'ADMIN',
+      );
 
       expect(mockPrismaService.member.findFirst).toHaveBeenCalledWith({
         where: { teamId, userId: ownerId },

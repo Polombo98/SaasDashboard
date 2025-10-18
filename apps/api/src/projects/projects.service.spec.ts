@@ -38,7 +38,13 @@ describe('ProjectsService', () => {
     it('should list projects for team member', async () => {
       mockPrismaService.member.findFirst.mockResolvedValue({ role: 'MEMBER' });
       mockPrismaService.project.findMany.mockResolvedValue([
-        { id: 'proj1', name: 'Project 1', teamId: 'team1', apiKey: 'key1', createdAt: new Date() },
+        {
+          id: 'proj1',
+          name: 'Project 1',
+          teamId: 'team1',
+          apiKey: 'key1',
+          createdAt: new Date(),
+        },
       ]);
 
       const result = await service.list('team1', 'user1');
@@ -50,7 +56,9 @@ describe('ProjectsService', () => {
     it('should throw if user is not a member', async () => {
       mockPrismaService.member.findFirst.mockResolvedValue(null);
 
-      await expect(service.list('team1', 'user1')).rejects.toThrow(ForbiddenException);
+      await expect(service.list('team1', 'user1')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -58,7 +66,10 @@ describe('ProjectsService', () => {
     it('should create project for ADMIN', async () => {
       mockPrismaService.member.findFirst.mockResolvedValue({ role: 'ADMIN' });
       mockPrismaService.project.create.mockResolvedValue({
-        id: 'proj1', name: 'Project 1', apiKey: 'proj_123', createdAt: new Date()
+        id: 'proj1',
+        name: 'Project 1',
+        apiKey: 'proj_123',
+        createdAt: new Date(),
       });
 
       const result = await service.create('team1', 'user1', 'Project 1');
@@ -70,7 +81,9 @@ describe('ProjectsService', () => {
     it('should throw if user is MEMBER', async () => {
       mockPrismaService.member.findFirst.mockResolvedValue({ role: 'MEMBER' });
 
-      await expect(service.create('team1', 'user1', 'Project')).rejects.toThrow(ForbiddenException);
+      await expect(service.create('team1', 'user1', 'Project')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -78,7 +91,10 @@ describe('ProjectsService', () => {
     it('should rotate API key for ADMIN', async () => {
       mockPrismaService.member.findFirst.mockResolvedValue({ role: 'ADMIN' });
       mockPrismaService.project.update.mockResolvedValue({
-        id: 'proj1', name: 'Project 1', apiKey: 'proj_new123', createdAt: new Date()
+        id: 'proj1',
+        name: 'Project 1',
+        apiKey: 'proj_new123',
+        createdAt: new Date(),
       });
 
       const result = await service.rotateKey('team1', 'user1', 'proj1');
