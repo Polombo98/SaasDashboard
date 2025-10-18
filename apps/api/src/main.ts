@@ -13,8 +13,14 @@ async function bootstrap() {
 
   const swagger = new DocumentBuilder()
     .setTitle('SaaS API')
+    .setDescription('API documentation for the SaaS platform')
     .setVersion('0.1')
     .addBearerAuth()
+    .addCookieAuth('refreshToken', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'refreshToken',
+    })
     .build();
   const doc = SwaggerModule.createDocument(app, swagger);
   SwaggerModule.setup('/docs', app, doc);
