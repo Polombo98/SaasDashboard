@@ -180,6 +180,11 @@ The refresh token is automatically sent from the HttpOnly cookie. Returns a new 
 ### Ingest (Metrics & Analytics)
 - `POST /v1/ingest` - Ingest metric events (requires project API key)
 
+### Analytics (Reporting)
+- `GET /v1/analytics/:projectId/mrr` - Get Monthly Recurring Revenue time-series (MEMBER+)
+- `GET /v1/analytics/:projectId/active-users` - Get active users time-series (MEMBER+)
+- `GET /v1/analytics/:projectId/churn` - Get churn rate time-series (MEMBER+)
+
 ## Metric Event Ingestion
 
 The ingest endpoint allows you to send analytics and metrics data to your project. This is typically called from your application (frontend or backend) using the project API key.
@@ -256,6 +261,68 @@ The ingest endpoint uses **API key authentication** (not JWT). Include the proje
 1. Creating a new project (returns API key)
 2. Rotating the API key via `/v1/teams/:teamId/projects/:projectId/rotate-key`
 
+## Analytics & Reporting
+
+The analytics endpoints allow you to query aggregated metrics data from your ingested events. All analytics endpoints require JWT authentication and verify that the user is a member of the project's team.
+
+### Query Parameters
+
+All analytics endpoints support the following query parameters:
+
+- `from` (optional) - Start date (ISO 8601 or YYYY-MM-DD). Defaults to 30 days ago.
+- `to` (optional) - End date (ISO 8601 or YYYY-MM-DD). Defaults to today.
+- `interval` (optional) - Time interval for aggregation: `day`, `week`, or `month`. Defaults to `day`.
+
+### Response Format
+
+All endpoints return data in time-series format:
+
+```json
+{
+  "labels": ["2025-10-01", "2025-10-02", "2025-10-03"],
+  "series": [1250.5, 1375.75, 1500.0]
+}
+```
+
+### Available Metrics
+
+#### 1. Monthly Recurring Revenue (MRR)
+
+```bash
+GET /v1/analytics/:projectId/mrr?from=2025-10-01&to=2025-10-18&interval=day
+Authorization: Bearer <access_token>
+```
+
+Returns the sum of all REVENUE events aggregated by the specified interval.
+
+#### 2. Active Users
+
+```bash
+GET /v1/analytics/:projectId/active-users?from=2025-10-01&to=2025-10-18&interval=day
+Authorization: Bearer <access_token>
+```
+
+Returns the count of distinct active users (unique `userId` in ACTIVE events) per interval.
+
+#### 3. Churn Rate
+
+```bash
+GET /v1/analytics/:projectId/churn?from=2025-10-01&to=2025-10-18&interval=day
+Authorization: Bearer <access_token>
+```
+
+Returns the churn rate percentage calculated as:
+```
+churn_rate = (SUBSCRIPTION_CANCEL events / SUBSCRIPTION_START events) * 100
+```
+
+### Data Aggregation
+
+- **Time bucketing**: Data is aggregated using PostgreSQL's `date_trunc` function
+- **Gap filling**: Missing data points are filled with zeros to ensure continuous series
+- **Week intervals**: Weeks start on Monday (ISO 8601 standard)
+- **Month intervals**: Months are calendar months (1st to last day)
+
 ## Role-Based Access Control
 
 ### Roles Hierarchy
@@ -307,6 +374,10 @@ src/
 ├── ingest/                # Metrics ingestion module
 │   ├── ingest.controller.ts
 │   ├── ingest.service.ts
+│   └── dto.ts
+├── analytics/             # Analytics & reporting module
+│   ├── analytics.controller.ts
+│   ├── analytics.service.ts
 │   └── dto.ts
 ├── common/                # Shared utilities
 │   ├── current-user.decorator.ts
