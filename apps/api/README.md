@@ -19,6 +19,12 @@ A robust NestJS-based REST API for a multi-tenant SaaS platform with team manage
   - Generate and rotate API keys
   - Role-based project access
 
+- **Metrics & Analytics Ingestion**
+  - Track revenue, signups, subscriptions, and user activity
+  - Batch event processing (up to 500 events per request)
+  - Idempotent event ingestion with deduplication
+  - API key-based authentication for client applications
+
 - **API Documentation**
   - Auto-generated Swagger/OpenAPI documentation
   - Interactive API explorer
@@ -171,6 +177,85 @@ The refresh token is automatically sent from the HttpOnly cookie. Returns a new 
 - `POST /v1/teams/:teamId/projects` - Create project (ADMIN+)
 - `POST /v1/teams/:teamId/projects/:projectId/rotate-key` - Rotate API key (ADMIN+)
 
+### Ingest (Metrics & Analytics)
+- `POST /v1/ingest` - Ingest metric events (requires project API key)
+
+## Metric Event Ingestion
+
+The ingest endpoint allows you to send analytics and metrics data to your project. This is typically called from your application (frontend or backend) using the project API key.
+
+### Event Types
+
+1. **REVENUE** - Track revenue events
+   - Required: `type`, `value`, `occurredAt`
+   - Optional: `userId`, `eventId`
+
+2. **ACTIVE** - Track active users
+   - Required: `type`, `userId`, `occurredAt`
+   - Optional: `value`, `eventId`
+
+3. **SUBSCRIPTION_START** - Track new subscriptions
+   - Required: `type`, `userId`, `occurredAt`
+   - Optional: `value`, `eventId`
+
+4. **SUBSCRIPTION_CANCEL** - Track subscription cancellations
+   - Required: `type`, `userId`, `occurredAt`
+   - Optional: `value`, `eventId`
+
+5. **SIGNUP** - Track user signups
+   - Required: `type`, `userId`, `occurredAt`
+   - Optional: `value`, `eventId`
+
+### Sending Events
+
+```bash
+POST /v1/ingest
+x-api-key: proj_1a2b3c4d5e6f7g8h9i0j
+Content-Type: application/json
+
+[
+  {
+    "type": "REVENUE",
+    "value": 99.99,
+    "occurredAt": "2025-10-18T10:30:00Z",
+    "userId": "user_123",
+    "eventId": "550e8400-e29b-41d4-a716-446655440000"
+  },
+  {
+    "type": "ACTIVE",
+    "userId": "user_456",
+    "occurredAt": "2025-10-18T11:00:00Z"
+  },
+  {
+    "type": "SIGNUP",
+    "userId": "user_789",
+    "occurredAt": "2025-10-18T09:00:00Z"
+  }
+]
+```
+
+### Response
+
+```json
+{
+  "projectId": "cuid123",
+  "received": 3,
+  "inserted": 3
+}
+```
+
+### Batch Limits & Idempotency
+
+- **Batch size**: 1-500 events per request
+- **Idempotency**: Include `eventId` (UUID) to prevent duplicate events
+- **Duplicate handling**: Events with the same `eventId` within a project are automatically skipped
+
+### Authentication
+
+The ingest endpoint uses **API key authentication** (not JWT). Include the project API key in the `x-api-key` header. You can get the API key from:
+1. Creating a new project (returns API key)
+2. Rotating the API key via `/v1/teams/:teamId/projects/:projectId/rotate-key`
+
 ## Role-Based Access Control
 
 ### Roles Hierarchy
@@ -219,6 +304,10 @@ src/
 │   ├── projects.controller.ts
 │   ├── projects.service.ts
 │   └── dto.ts
+├── ingest/                # Metrics ingestion module
+│   ├── ingest.controller.ts
+│   ├── ingest.service.ts
+│   └── dto.ts
 ├── common/                # Shared utilities
 │   ├── current-user.decorator.ts
 │   ├── team-role.guard.ts
@@ -251,7 +340,15 @@ prisma/
 ### Project
 - Belongs to a Team
 - Contains unique API key
+- One-to-many with MetricEvents
 - Tracks creation date
+
+### MetricEvent
+- Stores analytics and metrics data
+- Belongs to a Project
+- Event types: REVENUE, ACTIVE, SUBSCRIPTION_START, SUBSCRIPTION_CANCEL, SIGNUP
+- Supports idempotency via eventId (unique per project)
+- Indexed on (projectId, occurredAt) for efficient queries
 
 ## Development
 
