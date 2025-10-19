@@ -152,7 +152,7 @@ describe('TeamsService', () => {
         where: { teamId, userId: ownerId },
       });
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { id: targetUserId },
+        where: { email: targetUserId },
       });
       expect(mockPrismaService.member.upsert).toHaveBeenCalledWith({
         where: { userId_teamId: { userId: targetUserId, teamId } },
