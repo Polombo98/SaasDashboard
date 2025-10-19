@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('TeamRoleGuard', () => {
   let guard: TeamRoleGuard;
-  let prisma: PrismaService;
+  let prismaService: PrismaService;
 
   const mockPrismaService = {
     member: {
@@ -15,12 +15,10 @@ describe('TeamRoleGuard', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
+      providers: [{ provide: PrismaService, useValue: mockPrismaService }],
     }).compile();
 
-    prisma = module.get<PrismaService>(PrismaService);
+    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -29,7 +27,7 @@ describe('TeamRoleGuard', () => {
 
   describe('MEMBER role (default)', () => {
     beforeEach(() => {
-      guard = new TeamRoleGuard(prisma, 'MEMBER');
+      guard = new TeamRoleGuard(prismaService, 'MEMBER');
     });
 
     it('should allow access when user is a team member', async () => {
@@ -45,7 +43,7 @@ describe('TeamRoleGuard', () => {
       const result = await guard.canActivate(mockContext);
 
       expect(result).toBe(true);
-      expect(prisma.member.findFirst).toHaveBeenCalledWith({
+      expect(mockPrismaService.member.findFirst).toHaveBeenCalledWith({
         where: { teamId: 'team-123', userId: 'user-123' },
         select: { role: true },
       });
@@ -107,7 +105,7 @@ describe('TeamRoleGuard', () => {
       const result = await guard.canActivate(mockContext);
 
       expect(result).toBe(true);
-      expect(prisma.member.findFirst).toHaveBeenCalledWith({
+      expect(mockPrismaService.member.findFirst).toHaveBeenCalledWith({
         where: { teamId: 'team-456', userId: 'user-123' },
         select: { role: true },
       });
@@ -132,7 +130,7 @@ describe('TeamRoleGuard', () => {
 
   describe('ADMIN role requirement', () => {
     beforeEach(() => {
-      guard = new TeamRoleGuard(prisma, 'ADMIN');
+      guard = new TeamRoleGuard(prismaService, 'ADMIN');
     });
 
     it('should allow access when user is ADMIN', async () => {
@@ -184,7 +182,7 @@ describe('TeamRoleGuard', () => {
 
   describe('OWNER role requirement', () => {
     beforeEach(() => {
-      guard = new TeamRoleGuard(prisma, 'OWNER');
+      guard = new TeamRoleGuard(prismaService, 'OWNER');
     });
 
     it('should allow access when user is OWNER', async () => {

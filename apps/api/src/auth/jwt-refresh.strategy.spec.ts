@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
 
@@ -78,9 +78,7 @@ describe('JwtRefreshStrategy', () => {
     });
 
     it('should throw error when payload is not an object', () => {
-      expect(() => strategy.validate('invalid')).toThrow(
-        'Invalid JWT payload',
-      );
+      expect(() => strategy.validate('invalid')).toThrow('Invalid JWT payload');
       expect(() => strategy.validate(123)).toThrow('Invalid JWT payload');
       expect(() => strategy.validate(true)).toThrow('Invalid JWT payload');
     });

@@ -4,7 +4,6 @@ import { AnalyticsService } from './analytics.service';
 
 describe('AnalyticsController', () => {
   let controller: AnalyticsController;
-  let service: AnalyticsService;
 
   const mockAnalyticsService = {
     mrr: jest.fn(),
@@ -24,7 +23,6 @@ describe('AnalyticsController', () => {
     }).compile();
 
     controller = module.get<AnalyticsController>(AnalyticsController);
-    service = module.get<AnalyticsService>(AnalyticsService);
   });
 
   afterEach(() => {
@@ -47,7 +45,7 @@ describe('AnalyticsController', () => {
       const result = await controller.mrr(mockProjectId, mockUser, {});
 
       expect(result).toEqual(expectedResult);
-      expect(service.mrr).toHaveBeenCalledWith(
+      expect(mockAnalyticsService.mrr).toHaveBeenCalledWith(
         mockProjectId,
         mockUser.sub,
         expect.objectContaining({
@@ -64,19 +62,20 @@ describe('AnalyticsController', () => {
 
       mockAnalyticsService.mrr.mockResolvedValue(expectedResult);
 
-      const result = await controller.mrr(mockProjectId, mockUser, {
+      const queryParams = {
         from: '2025-10-01',
         to: '2025-10-18',
-        interval: 'week',
-      });
+        interval: 'week' as const,
+      };
+      const result = await controller.mrr(mockProjectId, mockUser, queryParams);
 
       expect(result).toEqual(expectedResult);
-      expect(service.mrr).toHaveBeenCalledWith(
+      expect(mockAnalyticsService.mrr).toHaveBeenCalledWith(
         mockProjectId,
         mockUser.sub,
         expect.objectContaining({
-          from: expect.any(Date),
-          to: expect.any(Date),
+          from: expect.any(Date) as Date,
+          to: expect.any(Date) as Date,
           interval: 'week',
         }),
       );
@@ -95,7 +94,7 @@ describe('AnalyticsController', () => {
       const result = await controller.activeUsers(mockProjectId, mockUser, {});
 
       expect(result).toEqual(expectedResult);
-      expect(service.activeUsers).toHaveBeenCalledWith(
+      expect(mockAnalyticsService.activeUsers).toHaveBeenCalledWith(
         mockProjectId,
         mockUser.sub,
         expect.objectContaining({
@@ -112,19 +111,24 @@ describe('AnalyticsController', () => {
 
       mockAnalyticsService.activeUsers.mockResolvedValue(expectedResult);
 
-      const result = await controller.activeUsers(mockProjectId, mockUser, {
+      const queryParams = {
         from: '2025-10-01',
         to: '2025-12-31',
-        interval: 'month',
-      });
+        interval: 'month' as const,
+      };
+      const result = await controller.activeUsers(
+        mockProjectId,
+        mockUser,
+        queryParams,
+      );
 
       expect(result).toEqual(expectedResult);
-      expect(service.activeUsers).toHaveBeenCalledWith(
+      expect(mockAnalyticsService.activeUsers).toHaveBeenCalledWith(
         mockProjectId,
         mockUser.sub,
         expect.objectContaining({
-          from: expect.any(Date),
-          to: expect.any(Date),
+          from: expect.any(Date) as Date,
+          to: expect.any(Date) as Date,
           interval: 'month',
         }),
       );
@@ -143,7 +147,7 @@ describe('AnalyticsController', () => {
       const result = await controller.churn(mockProjectId, mockUser, {});
 
       expect(result).toEqual(expectedResult);
-      expect(service.churn).toHaveBeenCalledWith(
+      expect(mockAnalyticsService.churn).toHaveBeenCalledWith(
         mockProjectId,
         mockUser.sub,
         expect.objectContaining({
@@ -160,19 +164,24 @@ describe('AnalyticsController', () => {
 
       mockAnalyticsService.churn.mockResolvedValue(expectedResult);
 
-      const result = await controller.churn(mockProjectId, mockUser, {
+      const queryParams = {
         from: '2025-10-01',
         to: '2025-11-30',
-        interval: 'month',
-      });
+        interval: 'month' as const,
+      };
+      const result = await controller.churn(
+        mockProjectId,
+        mockUser,
+        queryParams,
+      );
 
       expect(result).toEqual(expectedResult);
-      expect(service.churn).toHaveBeenCalledWith(
+      expect(mockAnalyticsService.churn).toHaveBeenCalledWith(
         mockProjectId,
         mockUser.sub,
         expect.objectContaining({
-          from: expect.any(Date),
-          to: expect.any(Date),
+          from: expect.any(Date) as Date,
+          to: expect.any(Date) as Date,
           interval: 'month',
         }),
       );

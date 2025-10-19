@@ -4,25 +4,45 @@ import { Resend } from 'resend';
 
 jest.mock('resend');
 
+interface EmailResponse {
+  id: string;
+}
+
+interface MockResendInstance {
+  emails: {
+    send: jest.MockedFunction<
+      (params: {
+        from: string;
+        to: string;
+        subject: string;
+        html: string;
+      }) => Promise<EmailResponse>
+    >;
+  };
+}
+
 describe('EmailService', () => {
   let service: EmailService;
-  let mockResendInstance: any;
+  let mockResendInstance: MockResendInstance;
 
   beforeEach(async () => {
     // Clear all mocks before each test
     jest.clearAllMocks();
 
     // Create mock Resend instance with properly typed send method
-    const mockSend = jest.fn();
+    const mockSend = jest.fn<
+      Promise<EmailResponse>,
+      [{ from: string; to: string; subject: string; html: string }]
+    >();
     mockResendInstance = {
       emails: {
         send: mockSend,
       },
-    } as any;
+    };
 
     // Mock the Resend constructor
     (Resend as jest.MockedClass<typeof Resend>).mockImplementation(
-      () => mockResendInstance,
+      () => mockResendInstance as unknown as Resend,
     );
 
     // Set environment variable for testing
@@ -49,9 +69,8 @@ describe('EmailService', () => {
     const name = 'Test User';
 
     it('should successfully send verification email with name', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({
-        id: 'email-id',
-      } as never);
+      const emailResponse: EmailResponse = { id: 'email-id' };
+      mockResendInstance.emails.send.mockResolvedValue(emailResponse);
 
       await service.sendVerificationEmail(email, token, name);
 
@@ -59,21 +78,20 @@ describe('EmailService', () => {
         from: 'onboarding@resend.dev',
         to: email,
         subject: 'Verify your email address',
-        html: expect.stringContaining('Hi Test User'),
+        html: expect.stringContaining('Hi Test User') as string,
       });
       expect(mockResendInstance.emails.send).toHaveBeenCalledWith(
         expect.objectContaining({
           html: expect.stringContaining(
             `http://localhost:3000/verify-email?token=${token}`,
-          ),
-        }),
+          ) as string,
+        }) as { from: string; to: string; subject: string; html: string },
       );
     });
 
     it('should successfully send verification email without name', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({
-        id: 'email-id',
-      } as never);
+      const emailResponse: EmailResponse = { id: 'email-id' };
+      mockResendInstance.emails.send.mockResolvedValue(emailResponse);
 
       await service.sendVerificationEmail(email, token);
 
@@ -81,15 +99,14 @@ describe('EmailService', () => {
         from: 'onboarding@resend.dev',
         to: email,
         subject: 'Verify your email address',
-        html: expect.stringContaining('Hi there'),
+        html: expect.stringContaining('Hi there') as string,
       });
     });
 
     it('should use FRONTEND_URL from environment if provided', async () => {
       process.env.FRONTEND_URL = 'https://example.com';
-      mockResendInstance.emails.send.mockResolvedValue({
-        id: 'email-id',
-      } as never);
+      const emailResponse: EmailResponse = { id: 'email-id' };
+      mockResendInstance.emails.send.mockResolvedValue(emailResponse);
 
       await service.sendVerificationEmail(email, token, name);
 
@@ -97,30 +114,31 @@ describe('EmailService', () => {
         expect.objectContaining({
           html: expect.stringContaining(
             `https://example.com/verify-email?token=${token}`,
-          ),
-        }),
+          ) as string,
+        }) as { from: string; to: string; subject: string; html: string },
       );
 
       delete process.env.FRONTEND_URL;
     });
 
     it('should include verification link that expires in 24 hours message', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({
-        id: 'email-id',
-      } as never);
+      const emailResponse: EmailResponse = { id: 'email-id' };
+      mockResendInstance.emails.send.mockResolvedValue(emailResponse);
 
       await service.sendVerificationEmail(email, token, name);
 
       expect(mockResendInstance.emails.send).toHaveBeenCalledWith(
         expect.objectContaining({
-          html: expect.stringContaining('This link will expire in 24 hours'),
-        }),
+          html: expect.stringContaining(
+            'This link will expire in 24 hours',
+          ) as string,
+        }) as { from: string; to: string; subject: string; html: string },
       );
     });
 
     it('should throw error if email sending fails', async () => {
       mockResendInstance.emails.send.mockRejectedValue(
-        new Error('Resend API error') as never,
+        new Error('Resend API error'),
       );
 
       await expect(
@@ -135,9 +153,8 @@ describe('EmailService', () => {
     const name = 'Test User';
 
     it('should successfully send password reset email with name', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({
-        id: 'email-id',
-      } as never);
+      const emailResponse: EmailResponse = { id: 'email-id' };
+      mockResendInstance.emails.send.mockResolvedValue(emailResponse);
 
       await service.sendPasswordResetEmail(email, token, name);
 
@@ -145,21 +162,20 @@ describe('EmailService', () => {
         from: 'onboarding@resend.dev',
         to: email,
         subject: 'Reset your password',
-        html: expect.stringContaining('Hi Test User'),
+        html: expect.stringContaining('Hi Test User') as string,
       });
       expect(mockResendInstance.emails.send).toHaveBeenCalledWith(
         expect.objectContaining({
           html: expect.stringContaining(
             `http://localhost:3000/reset-password?token=${token}`,
-          ),
-        }),
+          ) as string,
+        }) as { from: string; to: string; subject: string; html: string },
       );
     });
 
     it('should successfully send password reset email without name', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({
-        id: 'email-id',
-      } as never);
+      const emailResponse: EmailResponse = { id: 'email-id' };
+      mockResendInstance.emails.send.mockResolvedValue(emailResponse);
 
       await service.sendPasswordResetEmail(email, token);
 
@@ -167,15 +183,14 @@ describe('EmailService', () => {
         from: 'onboarding@resend.dev',
         to: email,
         subject: 'Reset your password',
-        html: expect.stringContaining('Hi there'),
+        html: expect.stringContaining('Hi there') as string,
       });
     });
 
     it('should use FRONTEND_URL from environment if provided', async () => {
       process.env.FRONTEND_URL = 'https://example.com';
-      mockResendInstance.emails.send.mockResolvedValue({
-        id: 'email-id',
-      } as never);
+      const emailResponse: EmailResponse = { id: 'email-id' };
+      mockResendInstance.emails.send.mockResolvedValue(emailResponse);
 
       await service.sendPasswordResetEmail(email, token, name);
 
@@ -183,30 +198,31 @@ describe('EmailService', () => {
         expect.objectContaining({
           html: expect.stringContaining(
             `https://example.com/reset-password?token=${token}`,
-          ),
-        }),
+          ) as string,
+        }) as { from: string; to: string; subject: string; html: string },
       );
 
       delete process.env.FRONTEND_URL;
     });
 
     it('should include reset link expiry message (1 hour)', async () => {
-      mockResendInstance.emails.send.mockResolvedValue({
-        id: 'email-id',
-      } as never);
+      const emailResponse: EmailResponse = { id: 'email-id' };
+      mockResendInstance.emails.send.mockResolvedValue(emailResponse);
 
       await service.sendPasswordResetEmail(email, token, name);
 
       expect(mockResendInstance.emails.send).toHaveBeenCalledWith(
         expect.objectContaining({
-          html: expect.stringContaining('This link will expire in 1 hour'),
-        }),
+          html: expect.stringContaining(
+            'This link will expire in 1 hour',
+          ) as string,
+        }) as { from: string; to: string; subject: string; html: string },
       );
     });
 
     it('should throw error if email sending fails', async () => {
       mockResendInstance.emails.send.mockRejectedValue(
-        new Error('Resend API error') as never,
+        new Error('Resend API error'),
       );
 
       await expect(
