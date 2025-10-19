@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useResetPasswordMutation } from '../../state/services/auth';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
@@ -13,6 +14,7 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const isRedirecting = useAuthRedirect();
 
   const token = searchParams.get('token');
 
@@ -57,6 +59,9 @@ export default function ResetPasswordPage() {
       );
     }
   };
+
+  // Don't show reset password form if user is already authenticated
+  if (isRedirecting) return null;
 
   if (!token) {
     return (

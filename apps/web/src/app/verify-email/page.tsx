@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useVerifyEmailMutation } from '../../state/services/auth';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
@@ -11,6 +12,7 @@ export default function VerifyEmailPage() {
   const [verifyEmail, { isLoading }] = useVerifyEmailMutation();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
+  const isRedirecting = useAuthRedirect();
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -40,6 +42,9 @@ export default function VerifyEmailPage() {
         );
       });
   }, [searchParams, verifyEmail, router]);
+
+  // Don't show verify email form if user is already authenticated
+  if (isRedirecting) return null;
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', p: 2, bgcolor: 'grey.50' }}>

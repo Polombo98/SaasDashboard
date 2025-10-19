@@ -3,12 +3,14 @@ import { Box, Button, Paper, TextField, Typography, Alert, Link as MuiLink } fro
 import { useState } from 'react';
 import { useForgotPasswordMutation } from '../../state/services/auth';
 import Link from 'next/link';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+  const isRedirecting = useAuthRedirect();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +29,9 @@ export default function ForgotPasswordPage() {
       setError(error.data?.message || 'Failed to send reset email. Please try again.');
     }
   };
+
+  // Don't show forgot password form if user is already authenticated
+  if (isRedirecting) return null;
 
   if (success) {
     return (

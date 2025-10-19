@@ -3,6 +3,7 @@ import { Box, Button, Paper, TextField, Typography, Alert, Link as MuiLink } fro
 import { useState } from 'react';
 import { useRegisterMutation } from '../../state/services/auth';
 import Link from 'next/link';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [register, { isLoading }] = useRegisterMutation();
+  const isRedirecting = useAuthRedirect();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +42,9 @@ export default function RegisterPage() {
       }
     }
   };
+
+  // Don't show register form if user is already authenticated
+  if (isRedirecting) return null;
 
   if (success) {
     return (

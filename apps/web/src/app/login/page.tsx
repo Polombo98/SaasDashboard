@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { setCredentials } from '../../state/slices/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuthRedirect } from '../../hooks/useAuthRedirect';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isRedirecting = useAuthRedirect();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +42,9 @@ export default function LoginPage() {
       }
     }
   };
+
+  // Don't show login form if user is already authenticated
+  if (isRedirecting) return null;
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', p: 2, bgcolor: 'grey.50' }}>
