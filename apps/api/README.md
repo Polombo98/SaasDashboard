@@ -121,9 +121,22 @@ npm run prisma:generate
 # Run database migrations
 npx prisma migrate dev
 
-# (Optional) Seed the database
+# Seed the database with demo data (RECOMMENDED)
 npx prisma db seed
+
+# Custom seed options
+npx prisma db seed -- --days=60 --users=200 --projects=2
+
+# Reset and reseed database
+npx prisma db seed -- --reset --days=90
 ```
+
+**Seed Script Details:**
+- Creates demo owner user (`owner@demo.local` / `Password123`)
+- Generates realistic demo team, projects, and users
+- Creates metric events over customizable time period
+- Default: 1 project, 120 users, 90 days of data, ~3,600 events
+- All demo users have `@demo.local` email domain for easy cleanup
 
 ### 4. Run the Application
 
@@ -523,7 +536,42 @@ npx prisma migrate reset
 
 # Open Prisma Studio (database GUI)
 npx prisma studio
+
+# Seed database with demo data
+npx prisma db seed
+
+# Seed with custom parameters
+npx prisma db seed -- --days=30 --users=50 --projects=2 --reset
 ```
+
+**Seed Command Options:**
+- `--days=N` - Number of days of historical data (default: 90)
+- `--users=N` - Number of users per project (default: 120)
+- `--projects=N` - Number of projects to create (default: 1)
+- `--reset` - Delete all demo data before seeding (careful!)
+
+**Example Usage:**
+```bash
+# Quick start with 30 days of data
+npx prisma db seed -- --days=30
+
+# Large dataset for testing (180 days, 500 users, 3 projects)
+npx prisma db seed -- --days=180 --users=500 --projects=3
+
+# Reset and reseed with fresh data
+npx prisma db seed -- --reset
+```
+
+**Generated Demo Data:**
+- Demo owner: `owner@demo.local` / `Password123`
+- Demo team with all users as members
+- Projects with unique API keys
+- Realistic metric events:
+  - REVENUE events (~35% of users with $8-$49/month subscriptions)
+  - ACTIVE user events (70% activity for subscribers, 12% for free users)
+  - SUBSCRIPTION_START/CANCEL events (~12% churn rate)
+  - SIGNUP events (~15% of users)
+- All events distributed realistically over the time period
 
 ### Code Quality
 

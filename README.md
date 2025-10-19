@@ -64,9 +64,26 @@ NEXT_PUBLIC_DEFAULT_PROJECT_ID=your-project-id
 
 ```bash
 cd apps/api
+
+# Run migrations
 npx prisma migrate dev
-npx prisma db seed  # Optional: seed with sample data
+
+# Seed with demo data (RECOMMENDED for development)
+npx prisma db seed
+
+# Or seed with custom options
+npx prisma db seed -- --days=60 --users=200 --projects=2
 ```
+
+**Demo Credentials:**
+- Email: `owner@demo.local`
+- Password: `Password123`
+
+The seed script generates:
+- 1 demo team with 1 project (customizable)
+- 120 demo users (customizable)
+- 90 days of realistic metric events (customizable)
+- ~3,600 events with revenue, active users, subscriptions, and signups
 
 ### 4. Start Development Servers
 
@@ -362,6 +379,16 @@ docker ps
 # Reset database
 cd apps/api
 npx prisma migrate reset
+
+# Reseed with fresh demo data
+npx prisma db seed -- --reset
+```
+
+### Need More Test Data?
+```bash
+# Generate more data for load testing
+cd apps/api
+npx prisma db seed -- --days=180 --users=500 --projects=5
 ```
 
 ### Port Conflicts
