@@ -246,6 +246,10 @@ export default function TeamsPage() {
               label="Role"
               onChange={(e) => setRole(e.target.value as 'ADMIN' | 'MEMBER')}
               disabled={isAddingMember}
+              MenuProps={{
+                disablePortal: true,
+                sx: { zIndex: 1400 }
+              }}
             >
               <MenuItem value="MEMBER">Member</MenuItem>
               <MenuItem value="ADMIN">Admin</MenuItem>

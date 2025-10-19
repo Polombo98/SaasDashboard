@@ -149,6 +149,10 @@ export default function ProjectsPage() {
                 value={selectedTeamId}
                 label="Select Team"
                 onChange={(e) => setSelectedTeamId(e.target.value)}
+                MenuProps={{
+                  disablePortal: true,
+                  sx: { zIndex: 1400 }
+                }}
               >
                 {teams?.map((team) => (
                   <MenuItem key={team.id} value={team.id}>

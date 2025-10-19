@@ -25,7 +25,15 @@ export default function ProjectSwitcher({
       <Box sx={{ minWidth: 220 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Team</InputLabel>
-          <Select label="Team" value={teamId ?? ''} onChange={(e)=>setTeamId(e.target.value)}>
+          <Select
+            label="Team"
+            value={teamId ?? ''}
+            onChange={(e)=>setTeamId(e.target.value)}
+            MenuProps={{
+              disablePortal: true,
+              sx: { zIndex: 1400 }
+            }}
+          >
             {(teams||[]).map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
           </Select>
         </FormControl>
@@ -33,7 +41,15 @@ export default function ProjectSwitcher({
       <Box sx={{ minWidth: 260 }}>
         <FormControl fullWidth size="small" disabled={!teamId}>
           <InputLabel>Project</InputLabel>
-          <Select label="Project" value={projectId ?? ''} onChange={(e)=>setProjectId(e.target.value)}>
+          <Select
+            label="Project"
+            value={projectId ?? ''}
+            onChange={(e)=>setProjectId(e.target.value)}
+            MenuProps={{
+              disablePortal: true,
+              sx: { zIndex: 1400 }
+            }}
+          >
             {(projects||[]).map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
           </Select>
         </FormControl>

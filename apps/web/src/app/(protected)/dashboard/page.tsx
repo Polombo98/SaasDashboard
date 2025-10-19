@@ -1,6 +1,12 @@
 'use client';
-import { Container, Typography, Box } from '@mui/material';
+import { Container, Typography, Box, Paper, Card, CardContent } from '@mui/material';
 import { useState, useMemo } from 'react';
+import {
+  TrendingUp as TrendingUpIcon,
+  People as PeopleIcon,
+  TrendingDown as TrendingDownIcon,
+  AttachMoney as MoneyIcon,
+} from '@mui/icons-material';
 import ProjectSwitcher from '../../../components/ProjectSwitcher';
 import DateFilters from '../../../components/DateFilters';
 import ChartCard from '../../../components/ChartCard';
@@ -29,18 +35,64 @@ export default function DashboardPage() {
     { skip: !projectId }
   );
 
+  // Calculate summary stats
+  const totalRevenue = mrr?.series[mrr.series.length - 1] ?? 0;
+  const totalUsers = active?.series[active.series.length - 1] ?? 0;
+  const churnRate = churn?.series[churn.series.length - 1] ?? 0;
+
+  const stats = [
+    {
+      title: 'Monthly Recurring Revenue',
+      value: `$${totalRevenue.toLocaleString()}`,
+      icon: <MoneyIcon sx={{ fontSize: 32 }} />,
+      color: '#10b981',
+      bgColor: '#10b98115',
+    },
+    {
+      title: 'Active Users',
+      value: totalUsers.toLocaleString(),
+      icon: <PeopleIcon sx={{ fontSize: 32 }} />,
+      color: '#3b82f6',
+      bgColor: '#3b82f615',
+    },
+    {
+      title: 'Churn Rate',
+      value: `${churnRate.toFixed(1)}%`,
+      icon: <TrendingDownIcon sx={{ fontSize: 32 }} />,
+      color: '#ef4444',
+      bgColor: '#ef444415',
+    },
+  ];
+
   return (
-    <Container sx={{ py: 3 }} maxWidth="xl">
-        <Typography variant="h5" gutterBottom fontWeight={600}>
+    <Container sx={{ py: 4 }} maxWidth="xl">
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
           Analytics Dashboard
         </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Track your key metrics and performance over time
+        </Typography>
+      </Box>
 
+      {/* Filters */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          mb: 4,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1.5fr 1fr' },
-            gap: 2,
-            mb: 3,
+            gridTemplateColumns: { xs: '1fr', lg: '1.5fr 1fr' },
+            gap: 3,
           }}
         >
           <ProjectSwitcher
@@ -58,18 +110,89 @@ export default function DashboardPage() {
             setInterval={setInterval}
           />
         </Box>
+      </Paper>
 
+      {/* Summary Stats Cards */}
+      {projectId && (
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
-            gap: 2,
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+            gap: 3,
+            mb: 4,
           }}
         >
-          <ChartCard title="Revenue (MRR)" data={mrr} />
-          <ChartCard title="Active Users" data={active} />
-          <ChartCard title="Churn Rate (%)" data={churn} />
+          {stats.map((stat) => (
+            <Card
+              key={stat.title}
+              elevation={2}
+              sx={{
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4,
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {stat.title}
+                    </Typography>
+                    <Typography variant="h4" fontWeight={700} sx={{ color: stat.color }}>
+                      {stat.value}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      bgcolor: stat.bgColor,
+                      color: stat.color,
+                      borderRadius: 2,
+                      p: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
         </Box>
-      </Container>
+      )}
+
+      {/* Charts */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+          gap: 3,
+        }}
+      >
+        <ChartCard
+          title="Revenue (MRR)"
+          data={mrr}
+          icon={<MoneyIcon sx={{ fontSize: 28 }} />}
+          color="#10b981"
+        />
+        <ChartCard
+          title="Active Users"
+          data={active}
+          icon={<PeopleIcon sx={{ fontSize: 28 }} />}
+          color="#3b82f6"
+        />
+        <ChartCard
+          title="Churn Rate (%)"
+          data={churn}
+          icon={<TrendingDownIcon sx={{ fontSize: 28 }} />}
+          color="#ef4444"
+        />
+      </Box>
+    </Container>
   );
 }
