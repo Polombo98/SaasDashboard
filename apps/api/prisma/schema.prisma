@@ -15,6 +15,8 @@ model User {
   emailVerified             Boolean   @default(false)
   emailVerificationToken    String?
   emailVerificationExpires  DateTime?
+  passwordResetToken        String?
+  passwordResetExpires      DateTime?
   createdAt                 DateTime  @default(now())
   Member                    Member[]
 }

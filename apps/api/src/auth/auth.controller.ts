@@ -299,6 +299,72 @@ export class AuthController {
     return this.auth.resendVerification(email);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Request password reset',
+    description:
+      'Sends a password reset email to the user if the account exists.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: {
+          type: 'string',
+          format: 'email',
+          example: 'user@example.com',
+        },
+      },
+      required: ['email'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset email sent (if account exists)',
+  })
+  async forgotPassword(@Body('email') email: string) {
+    return this.auth.forgotPassword(email);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  @ApiOperation({
+    summary: 'Reset password',
+    description: 'Resets the user password using the reset token from email.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        token: {
+          type: 'string',
+          example: 'reset-token-from-email',
+        },
+        password: {
+          type: 'string',
+          minLength: 8,
+          example: 'NewSecurePass123',
+        },
+      },
+      required: ['token', 'password'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successful',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired reset token',
+  })
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('password') password: string,
+  ) {
+    return this.auth.resetPassword(token, password);
+  }
+
   private setRefreshCookie(res: express.Response, token: string) {
     res.cookie('refreshToken', token, {
       httpOnly: true,

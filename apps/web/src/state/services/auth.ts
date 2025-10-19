@@ -40,6 +40,23 @@ export interface ResendVerificationResponse {
   message: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export const authApi = api.injectEndpoints({
   endpoints: (build) => ({
     login: build.mutation<AuthResponse, LoginRequest>(
@@ -53,6 +70,12 @@ export const authApi = api.injectEndpoints({
     ),
     resendVerification: build.mutation<ResendVerificationResponse, { email: string }>(
       { query: (body) => ({ url: '/v1/auth/resend-verification', method: 'POST', body }) }
+    ),
+    forgotPassword: build.mutation<ForgotPasswordResponse, ForgotPasswordRequest>(
+      { query: (body) => ({ url: '/v1/auth/forgot-password', method: 'POST', body }) }
+    ),
+    resetPassword: build.mutation<ResetPasswordResponse, ResetPasswordRequest>(
+      { query: (body) => ({ url: '/v1/auth/reset-password', method: 'POST', body }) }
     ),
     me: build.query<User, void>({ query: () => ({ url: '/v1/auth/me' }) }),
     refresh: build.mutation<RefreshResponse, void>(
@@ -69,6 +92,8 @@ export const {
   useRegisterMutation,
   useVerifyEmailMutation,
   useResendVerificationMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
   useMeQuery,
   useRefreshMutation,
   useLogoutMutation

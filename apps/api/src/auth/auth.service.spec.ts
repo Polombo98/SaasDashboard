@@ -31,6 +31,7 @@ describe('AuthService', () => {
 
   const mockEmailService = {
     sendVerificationEmail: jest.fn(),
+    sendPasswordResetEmail: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -451,6 +452,162 @@ describe('AuthService', () => {
         'Email is already verified',
       );
       expect(mockEmailService.sendVerificationEmail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('forgotPassword', () => {
+    const email = 'test@example.com';
+
+    it('should successfully send password reset email for existing user', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'user123',
+        email,
+        password: 'hashed',
+        name: 'Test User',
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        createdAt: new Date(),
+      });
+      mockPrismaService.user.update.mockResolvedValue({
+        id: 'user123',
+        email,
+        password: 'hashed',
+        name: 'Test User',
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        passwordResetToken: 'reset-token',
+        passwordResetExpires: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+      });
+      mockEmailService.sendPasswordResetEmail.mockResolvedValue(undefined);
+
+      const result = await service.forgotPassword(email);
+
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { email },
+      });
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user123' },
+        data: {
+          passwordResetToken: expect.any(String),
+          passwordResetExpires: expect.any(Date),
+        },
+      });
+      expect(mockEmailService.sendPasswordResetEmail).toHaveBeenCalledWith(
+        email,
+        expect.any(String),
+        'Test User',
+      );
+      expect(result).toEqual({
+        message:
+          'If an account exists with this email, a password reset link has been sent.',
+      });
+    });
+
+    it('should return generic message if user not found (security)', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+      const result = await service.forgotPassword(email);
+
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { email },
+      });
+      expect(mockPrismaService.user.update).not.toHaveBeenCalled();
+      expect(mockEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        message:
+          'If an account exists with this email, a password reset link has been sent.',
+      });
+    });
+  });
+
+  describe('resetPassword', () => {
+    const token = 'valid-reset-token';
+    const newPassword = 'NewPassword123';
+
+    it('should successfully reset password with valid token', async () => {
+      const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+      mockPrismaService.user.findFirst.mockResolvedValue({
+        id: 'user123',
+        email: 'test@example.com',
+        password: 'old-hashed-password',
+        name: 'Test User',
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        passwordResetToken: token,
+        passwordResetExpires: futureDate,
+        createdAt: new Date(),
+      });
+      mockPrismaService.user.update.mockResolvedValue({
+        id: 'user123',
+        email: 'test@example.com',
+        password: 'new-hashed-password',
+        name: 'Test User',
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        createdAt: new Date(),
+      });
+
+      const result = await service.resetPassword(token, newPassword);
+
+      expect(mockPrismaService.user.findFirst).toHaveBeenCalledWith({
+        where: { passwordResetToken: token },
+      });
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user123' },
+        data: {
+          password: expect.any(String),
+          passwordResetToken: null,
+          passwordResetExpires: null,
+        },
+      });
+      expect(result).toEqual({
+        message: 'Password reset successful. You can now log in.',
+      });
+    });
+
+    it('should throw BadRequestException if token not found', async () => {
+      mockPrismaService.user.findFirst.mockResolvedValue(null);
+
+      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
+        'Invalid or expired reset token',
+      );
+      expect(mockPrismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException if token is expired', async () => {
+      const pastDate = new Date(Date.now() - 60 * 60 * 1000);
+      mockPrismaService.user.findFirst.mockResolvedValue({
+        id: 'user123',
+        email: 'test@example.com',
+        password: 'hashed-password',
+        name: 'Test User',
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        passwordResetToken: token,
+        passwordResetExpires: pastDate,
+        createdAt: new Date(),
+      });
+
+      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
+        'Reset token has expired',
+      );
+      expect(mockPrismaService.user.update).not.toHaveBeenCalled();
     });
   });
 

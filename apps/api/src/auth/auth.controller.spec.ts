@@ -8,7 +8,6 @@ import type { Response, Request } from 'express';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: jest.Mocked<AuthService>;
 
   const mockAuthService = {
     register: jest.fn(),
@@ -16,6 +15,8 @@ describe('AuthController', () => {
     me: jest.fn(),
     verifyEmail: jest.fn(),
     resendVerification: jest.fn(),
+    forgotPassword: jest.fn(),
+    resetPassword: jest.fn(),
   };
 
   const mockJwtService = {
@@ -45,7 +46,6 @@ describe('AuthController', () => {
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    authService = module.get(AuthService) as jest.Mocked<AuthService>;
   });
 
   it('should be defined', () => {
@@ -70,7 +70,7 @@ describe('AuthController', () => {
 
       const result = await controller.register(registerDto);
 
-      expect(authService.register).toHaveBeenCalledWith(
+      expect(mockAuthService.register).toHaveBeenCalledWith(
         registerDto.email,
         registerDto.password,
         registerDto.name,
@@ -99,17 +99,18 @@ describe('AuthController', () => {
 
       mockAuthService.login.mockResolvedValue(expectedResponse);
 
+      const cookieMock = jest.fn();
       const mockResponse = {
-        cookie: jest.fn(),
+        cookie: cookieMock,
       } as unknown as Response;
 
       const result = await controller.login(loginDto, mockResponse);
 
-      expect(authService.login).toHaveBeenCalledWith(
+      expect(mockAuthService.login).toHaveBeenCalledWith(
         loginDto.email,
         loginDto.password,
       );
-      expect(mockResponse.cookie).toHaveBeenCalledWith(
+      expect(cookieMock).toHaveBeenCalledWith(
         'refreshToken',
         'refresh-token',
         expect.objectContaining({
@@ -180,13 +181,14 @@ describe('AuthController', () => {
 
   describe('logout', () => {
     it('should clear refresh token cookie', () => {
+      const clearCookieMock = jest.fn();
       const mockResponse = {
-        clearCookie: jest.fn(),
+        clearCookie: clearCookieMock,
       } as unknown as Response;
 
       const result = controller.logout(mockResponse);
 
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith('refreshToken');
+      expect(clearCookieMock).toHaveBeenCalledWith('refreshToken');
       expect(result).toEqual({ success: true });
     });
   });
@@ -211,7 +213,7 @@ describe('AuthController', () => {
 
       const result = await controller.me(mockRequest);
 
-      expect(authService.me).toHaveBeenCalledWith('user123');
+      expect(mockAuthService.me).toHaveBeenCalledWith('user123');
       expect(result).toEqual(expectedUser);
     });
   });
@@ -232,7 +234,7 @@ describe('AuthController', () => {
 
       const result = await controller.verifyEmail(mockRequest);
 
-      expect(authService.verifyEmail).toHaveBeenCalledWith(
+      expect(mockAuthService.verifyEmail).toHaveBeenCalledWith(
         'valid-verification-token',
       );
       expect(result).toEqual(expectedResponse);
@@ -264,7 +266,46 @@ describe('AuthController', () => {
 
       const result = await controller.resendVerification(email);
 
-      expect(authService.resendVerification).toHaveBeenCalledWith(email);
+      expect(mockAuthService.resendVerification).toHaveBeenCalledWith(email);
+      expect(result).toEqual(expectedResponse);
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('should request password reset for email', async () => {
+      const email = 'test@example.com';
+
+      const expectedResponse = {
+        message:
+          'If an account exists with this email, a password reset link has been sent.',
+      };
+
+      mockAuthService.forgotPassword.mockResolvedValue(expectedResponse);
+
+      const result = await controller.forgotPassword(email);
+
+      expect(mockAuthService.forgotPassword).toHaveBeenCalledWith(email);
+      expect(result).toEqual(expectedResponse);
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should reset password with valid token', async () => {
+      const token = 'valid-reset-token';
+      const password = 'NewPassword123';
+
+      const expectedResponse = {
+        message: 'Password reset successful. You can now log in.',
+      };
+
+      mockAuthService.resetPassword.mockResolvedValue(expectedResponse);
+
+      const result = await controller.resetPassword(token, password);
+
+      expect(mockAuthService.resetPassword).toHaveBeenCalledWith(
+        token,
+        password,
+      );
       expect(result).toEqual(expectedResponse);
     });
   });

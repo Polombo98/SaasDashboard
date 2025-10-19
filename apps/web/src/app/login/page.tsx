@@ -77,6 +77,11 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
           />
+          <Box sx={{ mt: 1, textAlign: 'right' }}>
+            <MuiLink component={Link} href="/forgot-password" underline="hover" variant="body2">
+              Forgot password?
+            </MuiLink>
+          </Box>
           <Button
             type="submit"
             fullWidth

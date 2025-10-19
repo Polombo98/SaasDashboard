@@ -155,6 +155,72 @@ export class AuthService {
     return { message: 'Verification email sent. Please check your inbox.' };
   }
 
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    // Don't reveal if user exists or not for security
+    if (!user) {
+      return {
+        message:
+          'If an account exists with this email, a password reset link has been sent.',
+      };
+    }
+
+    // Generate password reset token
+    const resetToken = this.generateVerificationToken();
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires,
+      },
+    });
+
+    // Send password reset email
+    await this.email.sendPasswordResetEmail(
+      email,
+      resetToken,
+      user.name ?? undefined,
+    );
+
+    return {
+      message:
+        'If an account exists with this email, a password reset link has been sent.',
+    };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { passwordResetToken: token },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    // Check if token is expired
+    if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+      throw new BadRequestException('Reset token has expired');
+    }
+
+    // Hash new password
+    const hash = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear reset token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hash,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      },
+    });
+
+    return { message: 'Password reset successful. You can now log in.' };
+  }
+
   private generateVerificationToken(): string {
     return randomBytes(32).toString('hex');
   }
