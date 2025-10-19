@@ -30,7 +30,7 @@ export class TeamsService {
   async addMember(
     requestorId: string,
     teamId: string,
-    targetUserId: string,
+    targetEmail: string,
     role: 'ADMIN' | 'MEMBER',
   ) {
     const reqMember = await this.prisma.member.findFirst({
@@ -38,14 +38,15 @@ export class TeamsService {
     });
     if (!reqMember || reqMember.role !== 'OWNER')
       throw new ForbiddenException('Only OWNER can invite');
+
     const target = await this.prisma.user.findUnique({
-      where: { id: targetUserId },
+      where: { email: targetEmail },
     });
-    if (!target) throw new NotFoundException('User not found');
+    if (!target) throw new NotFoundException('User not found with that email');
 
     return this.prisma.member.upsert({
-      where: { userId_teamId: { userId: targetUserId, teamId } },
-      create: { userId: targetUserId, teamId, role },
+      where: { userId_teamId: { userId: target.id, teamId } },
+      create: { userId: target.id, teamId, role },
       update: { role },
     });
   }

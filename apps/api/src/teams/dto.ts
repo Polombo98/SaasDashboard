@@ -8,7 +8,7 @@ export const CreateTeamDto = z.object({
 export type CreateTeamInput = z.infer<typeof CreateTeamDto>;
 
 export const AddMemberDto = z.object({
-  userId: z.string().min(1, { message: 'User ID is required' }),
+  email: z.string().email({ message: 'Valid email is required' }),
   role: z.enum(['ADMIN', 'MEMBER'], {
     message: 'Role must be ADMIN or MEMBER',
   }),
@@ -26,10 +26,10 @@ export class CreateTeamRequestDto {
 
 export class AddMemberRequestDto {
   @ApiProperty({
-    example: 'cuid123',
-    description: 'User ID to add to the team',
+    example: 'user@example.com',
+    description: 'Email address of the user to add to the team',
   })
-  userId!: string;
+  email!: string;
 
   @ApiProperty({
     example: 'MEMBER',

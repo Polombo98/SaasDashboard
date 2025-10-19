@@ -83,7 +83,7 @@ export class TeamsController {
   @ApiOperation({
     summary: 'Add a member to a team',
     description:
-      'Adds a new member to the team with the specified role. Only team OWNER can add members. Requires valid JWT access token.',
+      'Adds a new member to the team with the specified role by email address. Only team OWNER can add members. Requires valid JWT access token.',
   })
   @ApiParam({
     name: 'teamId',
@@ -105,12 +105,12 @@ export class TeamsController {
     status: 403,
     description: 'Forbidden - only OWNER can add members',
   })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 404, description: 'User not found with that email' })
   addMember(
     @CurrentUser() user: JwtPayload,
     @Param('teamId') teamId: string,
     @Body(new ZodValidationPipe(AddMemberDto)) body: AddMemberInput,
   ) {
-    return this.svc.addMember(user.sub, teamId, body.userId, body.role);
+    return this.svc.addMember(user.sub, teamId, body.email, body.role);
   }
 }
