@@ -5,6 +5,11 @@ A modern Next.js 15 dashboard application for visualizing SaaS metrics and analy
 ## Features
 
 - **Authentication**: Secure JWT-based authentication with automatic token refresh
+  - User login and registration
+  - Email verification flow
+  - Password reset functionality
+  - Automatic token refresh with HttpOnly cookies
+  - Protected routes with auth guards
 - **Dashboard**: Interactive analytics dashboard with real-time visualization
   - Revenue (MRR), Active Users, and Churn Rate metrics
   - Project and team selection
@@ -91,6 +96,18 @@ src/
 ├── login/                        # Login page
 │   └── page.tsx                  # Login form with error handling
 │
+├── register/                     # Registration page
+│   └── page.tsx                  # Sign up form
+│
+├── verify-email/                 # Email verification page
+│   └── page.tsx                  # Verify email with token
+│
+├── forgot-password/              # Forgot password page
+│   └── page.tsx                  # Request password reset
+│
+├── reset-password/               # Reset password page
+│   └── page.tsx                  # Reset password with token
+│
 ├── (protected)/                  # Protected routes (require auth)
 │   ├── layout.tsx                # Auth guard
 │   └── dashboard/
@@ -126,6 +143,17 @@ src/
    - Refresh tokens stored in HttpOnly cookies (secure)
    - Automatic token refresh on API errors (401)
 
+### Registration Flow
+
+```typescript
+// User submits registration form
+register({ email, password, name })
+  ↓
+// API creates user and sends verification email
+// Redirect to login with message
+router.push('/login?message=Please check your email...')
+```
+
 ### Login Flow
 
 ```typescript
@@ -137,6 +165,35 @@ dispatch(setCredentials({ accessToken, user }))
   ↓
 // Redirect to dashboard (or ?next= destination)
 router.push('/dashboard')
+```
+
+### Email Verification Flow
+
+```typescript
+// User clicks link in email with token
+// Navigates to /verify-email?token=abc123
+verifyEmail({ token })
+  ↓
+// API validates token and marks email as verified
+// Show success message
+router.push('/login?message=Email verified...')
+```
+
+### Password Reset Flow
+
+```typescript
+// User submits forgot password form
+forgotPassword({ email })
+  ↓
+// API sends reset email with token
+// Show confirmation message
+
+// User clicks link in email
+// Navigates to /reset-password?token=xyz789
+resetPassword({ token, newPassword })
+  ↓
+// API validates token and updates password
+router.push('/login?message=Password reset...')
 ```
 
 ### Protected Request Flow
@@ -190,6 +247,22 @@ await refresh();
 // Logout
 const [logout] = useLogoutMutation();
 await logout();
+
+// Verify email
+const [verifyEmail] = useVerifyEmailMutation();
+await verifyEmail({ token });
+
+// Resend verification
+const [resendVerification] = useResendVerificationMutation();
+await resendVerification();
+
+// Forgot password
+const [forgotPassword] = useForgotPasswordMutation();
+await forgotPassword({ email });
+
+// Reset password
+const [resetPassword] = useResetPasswordMutation();
+await resetPassword({ token, password });
 ```
 
 #### Analytics Service (`state/services/analytics.ts`)
@@ -218,7 +291,9 @@ const { data } = useChurnQuery({
 
 ## Components Overview
 
-### Login Page (`login/page.tsx`)
+### Authentication Pages
+
+#### Login Page (`login/page.tsx`)
 
 - Material-UI form with validation
 - Error handling with dismissible alerts
@@ -232,6 +307,31 @@ const { data } = useChurnQuery({
 - ✅ Loading indicator during submission
 - ✅ Auto-focus on email field
 - ✅ Responsive design
+- ✅ Link to registration and password reset
+
+#### Registration Page (`register/page.tsx`)
+
+- Sign up form with email, password, and name
+- Sends verification email upon successful registration
+- Redirects to login with instructions
+
+#### Email Verification (`verify-email/page.tsx`)
+
+- Verifies email address using token from email link
+- Shows success/error messages
+- Auto-redirects to login on success
+
+#### Forgot Password (`forgot-password/page.tsx`)
+
+- Request password reset email
+- Shows confirmation message
+- User-friendly error handling
+
+#### Reset Password (`reset-password/page.tsx`)
+
+- Reset password using token from email
+- Password confirmation validation
+- Redirects to login on success
 
 ### Dashboard Page (`(protected)/dashboard/page.tsx`)
 

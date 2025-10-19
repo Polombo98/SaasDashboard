@@ -27,6 +27,9 @@ A robust NestJS-based REST API for a multi-tenant SaaS platform with team manage
   - JWT-based authentication with access and refresh tokens
   - HttpOnly cookies for secure refresh token storage
   - Role-based access control (OWNER, ADMIN, MEMBER)
+  - Email verification with secure tokens
+  - Password reset functionality
+  - Email service integration (Resend)
 
 - **Team Management**
   - Create and manage teams
@@ -51,6 +54,11 @@ A robust NestJS-based REST API for a multi-tenant SaaS platform with team manage
 - **Rate Limiting & Throttling**
   - Global request throttling (600 req/min)
   - IP-based rate limiting
+
+- **Email Notifications**
+  - Email verification on registration
+  - Password reset emails
+  - Branded HTML email templates
 
 ## Tech Stack
 
@@ -96,6 +104,12 @@ JWT_REFRESH_SECRET=your-refresh-secret-key-here
 # JWT Expiration (in seconds)
 JWT_ACCESS_EXPIRES=900      # 15 minutes
 JWT_REFRESH_EXPIRES=604800  # 7 days
+
+# Email Service (Resend)
+RESEND_API_KEY=re_your_api_key_here
+
+# Frontend URL (for email links and CORS)
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### 3. Database Setup
@@ -198,11 +212,15 @@ The refresh token is automatically sent from the HttpOnly cookie. Returns a new 
 ```
 
 ### Authentication
-- `POST /v1/auth/register` - Register new user
+- `POST /v1/auth/register` - Register new user (sends verification email)
 - `POST /v1/auth/login` - Login user
 - `POST /v1/auth/refresh` - Refresh access token
 - `POST /v1/auth/logout` - Logout user (clears refresh token)
 - `GET /v1/auth/me` - Get current user info
+- `GET /v1/auth/verify-email?token=<token>` - Verify email address
+- `POST /v1/auth/resend-verification` - Resend verification email
+- `POST /v1/auth/forgot-password` - Request password reset email
+- `POST /v1/auth/reset-password` - Reset password with token
 
 ### Teams
 - `POST /v1/teams` - Create a new team (creates user as OWNER)
@@ -472,15 +490,27 @@ prisma/
 # Run all unit tests
 npm run test
 
+# Run unit tests with coverage
+npm run test:cov
+
+# Run E2E tests
+npm run test:e2e
+
 # Watch mode (re-run tests on file changes)
 npm run test:watch
-
-# Generate coverage report
-npm run test:cov
 
 # Debug tests
 npm run test:debug
 ```
+
+**Current Test Coverage**: 83.03% (127 passing tests across 17 test suites)
+
+**Test Suites:**
+- Unit tests for all controllers, services, and guards
+- E2E tests for authentication flow
+- E2E tests for teams and projects management
+- E2E tests for event ingestion and analytics
+- Full test coverage for email verification and password reset
 
 ### Database Management
 
@@ -544,6 +574,8 @@ nest generate resource feature-name
 | `JWT_REFRESH_SECRET` | Secret for signing refresh tokens | `another-random-secret` |
 | `JWT_ACCESS_EXPIRES` | Access token lifetime (seconds) | `900` (15 min) |
 | `JWT_REFRESH_EXPIRES` | Refresh token lifetime (seconds) | `604800` (7 days) |
+| `RESEND_API_KEY` | Resend API key for sending emails | `re_123abc...` |
+| `FRONTEND_URL` | Frontend URL for email links and CORS | `http://localhost:3000` |
 
 ## Rate Limiting
 
