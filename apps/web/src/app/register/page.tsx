@@ -2,9 +2,6 @@
 import { Box, Button, Paper, TextField, Typography, Alert, Link as MuiLink } from '@mui/material';
 import { useState } from 'react';
 import { useRegisterMutation } from '../../state/services/auth';
-import { useDispatch } from 'react-redux';
-import { setCredentials } from '../../state/slices/auth';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -12,10 +9,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [register, { isLoading }] = useRegisterMutation();
-  const dispatch = useDispatch();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +27,8 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await register({ email, password, name: name || undefined }).unwrap();
-      dispatch(setCredentials({ accessToken: res.accessToken, user: res.user }));
-
-      const next = searchParams.get('next');
-      router.push(next || '/dashboard');
+      await register({ email, password, name: name || undefined }).unwrap();
+      setSuccess(true);
     } catch (err) {
       const error = err as { status?: number; data?: { message?: string } };
       if (error.status === 409) {
@@ -48,6 +40,40 @@ export default function RegisterPage() {
       }
     }
   };
+
+  if (success) {
+    return (
+      <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', p: 2, bgcolor: 'grey.50' }}>
+        <Paper elevation={3} sx={{ p: 4, width: 400, maxWidth: '100%' }}>
+          <Typography variant="h5" gutterBottom fontWeight={600}>
+            Check your email
+          </Typography>
+
+          <Alert severity="success" sx={{ mt: 2, mb: 3 }}>
+            We&apos;ve sent a verification link to <strong>{email}</strong>
+          </Alert>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Please click the link in the email to verify your account. The link will expire in 24 hours.
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Didn&apos;t receive the email? Check your spam folder or{' '}
+            <MuiLink component={Link} href="/login" underline="hover">
+              try logging in
+            </MuiLink>
+            .
+          </Typography>
+
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <MuiLink component={Link} href="/login" underline="hover">
+              Back to login
+            </MuiLink>
+          </Box>
+        </Paper>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', p: 2, bgcolor: 'grey.50' }}>

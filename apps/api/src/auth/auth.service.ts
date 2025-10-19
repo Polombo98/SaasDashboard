@@ -9,6 +9,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { User } from '@prisma/client';
 import { SignOptions } from 'jsonwebtoken';
+import { EmailService } from '../email/email.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private email: EmailService,
   ) {
     const accessSecret = this.config.get<string>('JWT_ACCESS_SECRET');
     const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');
@@ -37,12 +40,33 @@ export class AuthService {
   async register(email: string, password: string, name?: string) {
     const exists = await this.prisma.user.findUnique({ where: { email } });
     if (exists) throw new BadRequestException('Email already registered');
+
     const hash = await bcrypt.hash(password, 10);
+    const verificationToken = this.generateVerificationToken();
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     const user = await this.prisma.user.create({
-      data: { email, password: hash, name },
+      data: {
+        email,
+        password: hash,
+        name,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+      },
     });
-    const tokens = await this.issueTokens(user.id, user.email);
-    return { user: this.safeUser(user), ...tokens };
+
+    // Send verification email
+    await this.email.sendVerificationEmail(
+      email,
+      verificationToken,
+      name ?? undefined,
+    );
+
+    return {
+      message:
+        'Registration successful. Please check your email to verify your account.',
+      email: user.email,
+    };
   }
 
   async login(email: string, password: string) {
@@ -50,6 +74,14 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
+
+    // Check if email is verified
+    if (!user.emailVerified) {
+      throw new UnauthorizedException(
+        'Please verify your email address before logging in',
+      );
+    }
+
     const tokens = await this.issueTokens(user.id, user.email);
     return { user: this.safeUser(user), ...tokens };
   }
@@ -58,6 +90,73 @@ export class AuthService {
     const u = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!u) throw new UnauthorizedException();
     return this.safeUser(u);
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { emailVerificationToken: token },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    // Check if token is expired
+    if (
+      !user.emailVerificationExpires ||
+      user.emailVerificationExpires < new Date()
+    ) {
+      throw new BadRequestException('Verification token has expired');
+    }
+
+    // Mark email as verified and clear verification token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      },
+    });
+
+    return { message: 'Email verified successfully. You can now log in.' };
+  }
+
+  async resendVerification(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new BadRequestException('No account found with this email address');
+    }
+
+    if (user.emailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Generate new verification token
+    const verificationToken = this.generateVerificationToken();
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+      },
+    });
+
+    // Send verification email
+    await this.email.sendVerificationEmail(
+      email,
+      verificationToken,
+      user.name ?? undefined,
+    );
+
+    return { message: 'Verification email sent. Please check your inbox.' };
+  }
+
+  private generateVerificationToken(): string {
+    return randomBytes(32).toString('hex');
   }
 
   private safeUser(u: User) {

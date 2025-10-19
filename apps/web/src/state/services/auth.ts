@@ -23,8 +23,21 @@ export interface RegisterRequest {
   name?: string;
 }
 
+export interface RegisterResponse {
+  message: string;
+  email: string;
+}
+
 export interface RefreshResponse {
   accessToken: string;
+}
+
+export interface VerifyEmailResponse {
+  message: string;
+}
+
+export interface ResendVerificationResponse {
+  message: string;
 }
 
 export const authApi = api.injectEndpoints({
@@ -32,8 +45,14 @@ export const authApi = api.injectEndpoints({
     login: build.mutation<AuthResponse, LoginRequest>(
       { query: (body) => ({ url: '/v1/auth/login', method: 'POST', body }) }
     ),
-    register: build.mutation<AuthResponse, RegisterRequest>(
+    register: build.mutation<RegisterResponse, RegisterRequest>(
       { query: (body) => ({ url: '/v1/auth/register', method: 'POST', body }) }
+    ),
+    verifyEmail: build.mutation<VerifyEmailResponse, { token: string }>(
+      { query: ({ token }) => ({ url: `/v1/auth/verify-email?token=${token}`, method: 'GET' }) }
+    ),
+    resendVerification: build.mutation<ResendVerificationResponse, { email: string }>(
+      { query: (body) => ({ url: '/v1/auth/resend-verification', method: 'POST', body }) }
     ),
     me: build.query<User, void>({ query: () => ({ url: '/v1/auth/me' }) }),
     refresh: build.mutation<RefreshResponse, void>(
@@ -45,4 +64,12 @@ export const authApi = api.injectEndpoints({
   }),
 });
 
-export const { useLoginMutation, useRegisterMutation, useMeQuery, useRefreshMutation, useLogoutMutation } = authApi;
+export const {
+  useLoginMutation,
+  useRegisterMutation,
+  useVerifyEmailMutation,
+  useResendVerificationMutation,
+  useMeQuery,
+  useRefreshMutation,
+  useLogoutMutation
+} = authApi;

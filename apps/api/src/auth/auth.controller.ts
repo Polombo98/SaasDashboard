@@ -79,7 +79,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Register a new user',
     description:
-      'Creates a new user account and returns access token. Sets refresh token as HttpOnly cookie.',
+      'Creates a new user account and sends a verification email. User must verify email before logging in.',
   })
   @ApiBody({
     type: RegisterRequestDto,
@@ -109,22 +109,14 @@ export class AuthController {
   })
   @ApiResponse({
     status: 201,
-    description: 'User successfully registered',
-    type: AuthResponseDto,
+    description: 'User successfully registered, verification email sent',
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 409, description: 'User already exists' })
   async register(
     @Body(new ZodValidationPipe(RegisterDto)) body: RegisterInput,
-    @Res({ passthrough: true }) res: express.Response,
   ) {
-    const { user, accessToken, refreshToken } = await this.auth.register(
-      body.email,
-      body.password,
-      body.name,
-    );
-    this.setRefreshCookie(res, refreshToken);
-    return { user, accessToken };
+    return this.auth.register(body.email, body.password, body.name);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -252,6 +244,59 @@ export class AuthController {
   })
   async me(@Req() req: AuthRequest) {
     return this.auth.me(req.user.sub);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('verify-email')
+  @ApiOperation({
+    summary: 'Verify email address',
+    description: 'Verifies user email using the token sent via email.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verified successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired verification token',
+  })
+  async verifyEmail(@Req() req: express.Request) {
+    const token = req.query.token as string;
+    if (!token) {
+      throw new UnauthorizedException('Verification token is required');
+    }
+    return this.auth.verifyEmail(token);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('resend-verification')
+  @ApiOperation({
+    summary: 'Resend verification email',
+    description: 'Sends a new verification email to the user.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: {
+          type: 'string',
+          format: 'email',
+          example: 'user@example.com',
+        },
+      },
+      required: ['email'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification email sent',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid email or email already verified',
+  })
+  async resendVerification(@Body('email') email: string) {
+    return this.auth.resendVerification(email);
   }
 
   private setRefreshCookie(res: express.Response, token: string) {
