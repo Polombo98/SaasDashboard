@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../state/store';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { Box } from '@mui/material';
+import Header from '../../components/Header';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -17,5 +19,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   if (!bootstrapped) return null;         // prevent flash
   if (!accessToken) return null;
 
-  return <>{children}</>;
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header />
+      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'grey.50' }}>
+        {children}
+      </Box>
+    </Box>
+  );
 }

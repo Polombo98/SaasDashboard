@@ -1,5 +1,4 @@
 'use client';
-import ProtectedLayout from '../layout';
 import { Container, Typography, Box } from '@mui/material';
 import { useState, useMemo } from 'react';
 import ProjectSwitcher from '../../../components/ProjectSwitcher';
@@ -31,8 +30,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <ProtectedLayout>
-      <Container sx={{ py: 3 }} maxWidth="xl">
+    <Container sx={{ py: 3 }} maxWidth="xl">
         <Typography variant="h5" gutterBottom fontWeight={600}>
           Analytics Dashboard
         </Typography>
@@ -73,6 +71,5 @@ export default function DashboardPage() {
           <ChartCard title="Churn Rate (%)" data={churn} />
         </Box>
       </Container>
-    </ProtectedLayout>
   );
 }
