@@ -230,8 +230,8 @@ async function main(): Promise<void> {
       const u = subscriberCandidates[i];
       const startOffset = randBetween(0, Math.max(0, Math.floor(days * 0.7))); // start within early range
       const sDate = addDays(startDate, startOffset);
-      // possible cancel
-      const willCancel = Math.random() < 0.12; // 12% eventually cancel in period
+      // Ensure ~12% churn: every 8th subscriber cancels (deterministic to avoid 0 cancels)
+      const willCancel = i % 8 === 0; // ~12.5% churn rate
       let cancelDate: Date | null = null;
       if (willCancel) {
         const cancelOffset = randBetween(Math.floor(days * 0.1), days - 1);
@@ -276,20 +276,7 @@ async function main(): Promise<void> {
         // check subscription active on this day
         const started = sub.start <= day;
         const canceled = sub.cancel && sub.cancel <= day;
-        if (!started || canceled) continue;
 
-        // if this day is billing day of month
-        const dayOfMonth = day.getUTCDate();
-        if (dayOfMonth === sub.billingDay) {
-          rows.push({
-            projectId: project.id,
-            type: MetricType.REVENUE,
-            value: sub.monthly,
-            userId,
-            eventId: null,
-            occurredAt: day,
-          });
-        }
         // add subscription_start event at start date
         if (iso(sub.start).slice(0, 10) === iso(day).slice(0, 10)) {
           rows.push({
@@ -301,7 +288,8 @@ async function main(): Promise<void> {
             occurredAt: day,
           });
         }
-        // subscription_cancel
+
+        // subscription_cancel (must be BEFORE the continue statement)
         if (
           sub.cancel &&
           iso(sub.cancel).slice(0, 10) === iso(day).slice(0, 10)
@@ -310,6 +298,22 @@ async function main(): Promise<void> {
             projectId: project.id,
             type: MetricType.SUBSCRIPTION_CANCEL,
             value: null,
+            userId,
+            eventId: null,
+            occurredAt: day,
+          });
+        }
+
+        // Skip revenue events if not started or already canceled
+        if (!started || canceled) continue;
+
+        // if this day is billing day of month
+        const dayOfMonth = day.getUTCDate();
+        if (dayOfMonth === sub.billingDay) {
+          rows.push({
+            projectId: project.id,
+            type: MetricType.REVENUE,
+            value: sub.monthly,
             userId,
             eventId: null,
             occurredAt: day,

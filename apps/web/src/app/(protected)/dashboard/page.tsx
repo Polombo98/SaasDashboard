@@ -16,9 +16,9 @@ import { useMrrQuery, useActiveUsersQuery, useChurnQuery } from '../../../state/
 export default function DashboardPage() {
   const [teamId, setTeamId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [from, setFrom] = useState(() => toISODate(new Date(Date.now() - 30 * 24 * 3600 * 1000)));
+  const [from, setFrom] = useState(() => toISODate(new Date(Date.now() - 90 * 24 * 3600 * 1000)));
   const [to, setTo] = useState(() => toISODate(new Date()));
-  const [interval, setInterval] = useState<'day' | 'week' | 'month'>('day');
+  const [interval, setInterval] = useState<'day' | 'week' | 'month'>('week');
 
   const queryString = useMemo(() => qs({ from, to, interval }), [from, to, interval]);
 
@@ -36,27 +36,31 @@ export default function DashboardPage() {
   );
 
   // Calculate summary stats
-  const totalRevenue = mrr?.series[mrr.series.length - 1] ?? 0;
-  const totalUsers = active?.series[active.series.length - 1] ?? 0;
-  const churnRate = churn?.series[churn.series.length - 1] ?? 0;
+  const totalRevenue = mrr?.series.reduce((sum, val) => sum + val, 0) ?? 0;
+  const totalUsers = active?.series.length
+    ? Math.round(active.series.reduce((sum, val) => sum + val, 0) / active.series.length)
+    : 0;
+  const churnRate = churn?.series.length
+    ? churn.series.reduce((sum, val) => sum + val, 0) / churn.series.length
+    : 0;
 
   const stats = [
     {
-      title: 'Monthly Recurring Revenue',
+      title: 'Total Revenue (Period)',
       value: `$${totalRevenue.toLocaleString()}`,
       icon: <MoneyIcon sx={{ fontSize: 32 }} />,
       color: '#10b981',
       bgColor: '#10b98115',
     },
     {
-      title: 'Active Users',
+      title: 'Avg Active Users',
       value: totalUsers.toLocaleString(),
       icon: <PeopleIcon sx={{ fontSize: 32 }} />,
       color: '#3b82f6',
       bgColor: '#3b82f615',
     },
     {
-      title: 'Churn Rate',
+      title: 'Avg Churn Rate',
       value: `${churnRate.toFixed(1)}%`,
       icon: <TrendingDownIcon sx={{ fontSize: 32 }} />,
       color: '#ef4444',

@@ -28,6 +28,7 @@ export const analyticsApi = api.injectEndpoints({
         const queryString = params.toString();
         return `/v1/analytics/${projectId}/mrr${queryString ? `?${queryString}` : ''}`;
       },
+      keepUnusedDataFor: 0, // Don't cache - always fetch fresh data
     }),
     activeUsers: build.query<TimeSeriesData, AnalyticsQueryParams>({
       query: ({ projectId, qs, from, to, interval }) => {
@@ -42,6 +43,7 @@ export const analyticsApi = api.injectEndpoints({
         const queryString = params.toString();
         return `/v1/analytics/${projectId}/active-users${queryString ? `?${queryString}` : ''}`;
       },
+      keepUnusedDataFor: 0, // Don't cache - always fetch fresh data
     }),
     churn: build.query<TimeSeriesData, AnalyticsQueryParams>({
       query: ({ projectId, qs, from, to, interval }) => {
@@ -56,6 +58,7 @@ export const analyticsApi = api.injectEndpoints({
         const queryString = params.toString();
         return `/v1/analytics/${projectId}/churn${queryString ? `?${queryString}` : ''}`;
       },
+      keepUnusedDataFor: 0, // Don't cache - always fetch fresh data
     }),
   }),
 });
