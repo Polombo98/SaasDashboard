@@ -2,7 +2,6 @@
 import { Container, Typography, Box, Paper, Card, CardContent } from '@mui/material';
 import { useState, useMemo } from 'react';
 import {
-  TrendingUp as TrendingUpIcon,
   People as PeopleIcon,
   TrendingDown as TrendingDownIcon,
   AttachMoney as MoneyIcon,

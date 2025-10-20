@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged (ESLint + TypeScript on staged files)
+npx lint-staged
+
+# Run full TypeScript type check on both workspaces
+echo "Running TypeScript type check..."
+npm run type-check --workspace=apps/api
+npm run type-check --workspace=apps/web
+
+echo "✓ Pre-commit checks passed!"

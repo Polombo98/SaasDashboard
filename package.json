@@ -9,7 +9,22 @@
     "dev": "concurrently -n WEB,API -c auto,auto \"npm:dev --workspace=apps/web\" \"npm:dev --workspace=apps/api\"",
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspaces",
+    "prepare": "husky",
+    "type-check": "npm run type-check --workspaces --if-present"
   },
-  "devDependencies": { "concurrently": "^9.0.0" }
+  "lint-staged": {
+    "apps/api/src/**/*.{ts,tsx}": [
+      "cd apps/api && npx eslint --fix",
+      "cd apps/api && npx tsc --noEmit"
+    ],
+    "apps/web/src/**/*.{ts,tsx}": [
+      "cd apps/web && npx eslint --fix"
+    ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4"
+  }
 }
